@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Satoshi Miner – Mine echte Satoshis</title>
+<style>
+:root {
+  --bg: #0d0d0f;
+  --bg2: #16161a;
+  --bg3: #1e1e24;
+  --orange: #f7931a;
+  --orange-dim: #c47410;
+  --orange-glow: rgba(247,147,26,.35);
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --blue: #3498db;
+  --text: #f0f0f2;
+  --muted: #8a8a96;
+  --border: #2a2a32;
+  --radius: 12px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.app { max-width: 520px; margin: 0 auto; padding: 12px 12px 100px; min-height: 100%; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 4px 14px; gap: 8px;
+}
+.logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.15rem; }
+.logo-btc {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(145deg, var(--orange), var(--orange-dim));
+  display: grid; place-items: center; font-weight: 900; color: #111; font-size: .9rem;
+  box-shadow: 0 0 16px var(--orange-glow);
+}
+.header-actions { display: flex; gap: 6px; }
+.icon-btn {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-size: 1rem;
+}
+.icon-btn:active { transform: scale(.94); }
+
+/* Stats bar */
+.stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+}
+.stat {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.stat-label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.stat-value { font-size: 1.15rem; font-weight: 700; color: var(--orange); word-break: break-all; }
+.stat-value.small { font-size: .95rem; }
+.stat.wide { grid-column: 1 / -1; }
+.stat-sub { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+
+/* Mining area */
+.mine-area {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+  padding: 16px; margin-bottom: 14px; text-align: center; position: relative; overflow: hidden;
+}
+.mine-area::before {
+  content: ""; position: absolute; inset: -40%; 
+  background: radial-gradient(circle at 50% 40%, var(--orange-glow), transparent 55%);
+  pointer-events: none; opacity: .5;
+}
+.hash-display {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: .68rem; color: var(--muted); word-break: break-all;
+  min-height: 2.6em; margin-bottom: 10px; position: relative; z-index: 1;
+}
+.hash-display .ok { color: var(--green); }
+.target-row {
+  display: flex; justify-content: space-between; gap: 8px; font-size: .72rem;
+  color: var(--muted); margin-bottom: 12px; position: relative; z-index: 1;
+}
+.mine-btn {
+  position: relative; z-index: 1;
+  width: 160px; height: 160px; border-radius: 50%; border: none; cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, #ffb347, var(--orange) 45%, var(--orange-dim));
+  color: #111; font-weight: 900; font-size: 1.25rem; letter-spacing: .02em;
+  box-shadow: 0 8px 28px var(--orange-glow), inset 0 2px 0 rgba(255,255,255,.35);
+  transition: transform .08s ease, box-shadow .15s;
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.mine-btn:active, .mine-btn.pulse {
+  transform: scale(.92);
+  box-shadow: 0 4px 16px var(--orange-glow), inset 0 2px 0 rgba(255,255,255,.2);
+}
+.mine-btn .sub { display: block; font-size: .7rem; font-weight: 600; opacity: .75; margin-top: 2px; }
+.block-found {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.55); z-index: 5; border-radius: 16px;
+  animation: fadeIn .25s ease;
+}
+.block-found.show { display: flex; }
+.block-found-inner {
+  background: var(--bg3); border: 2px solid var(--orange); border-radius: 14px;
+  padding: 18px 22px; text-align: center; max-width: 90%;
+  box-shadow: 0 0 40px var(--orange-glow);
+}
+.block-found-inner h3 { color: var(--orange); margin-bottom: 6px; }
+.particles { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+
+/* Progress */
+.progress-wrap { margin-top: 14px; position: relative; z-index: 1; }
+.progress-label { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-bottom: 4px; }
+.progress-bar {
+  height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; border: 1px solid var(--border);
+}
+.progress-fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, var(--orange-dim), var(--orange));
+  border-radius: 99px; transition: width .12s linear;
+}
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 4px; background: var(--bg2); padding: 4px; border-radius: 12px;
+  border: 1px solid var(--border); margin-bottom: 12px; overflow-x: auto;
+}
+.tab {
+  flex: 1; min-width: 64px; border: none; background: transparent; color: var(--muted);
+  padding: 8px 6px; border-radius: 9px; font-size: .78rem; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.tab.active { background: var(--bg3); color: var(--orange); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Cards / upgrades */
+.card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 8px; display: flex; gap: 10px; align-items: flex-start;
+}
+.card-icon {
+  width: 44px; height: 44px; border-radius: 10px; background: var(--bg3);
+  display: grid; place-items: center; font-size: 1.35rem; flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.card-body { flex: 1; min-width: 0; }
+.card-title { font-weight: 700; font-size: .95rem; }
+.card-desc { font-size: .75rem; color: var(--muted); margin: 2px 0 6px; }
+.card-meta { font-size: .72rem; color: var(--green); }
+.buy-btn {
+  border: none; background: var(--orange); color: #111; font-weight: 700;
+  padding: 8px 12px; border-radius: 9px; cursor: pointer; font-size: .8rem; white-space: nowrap;
+  align-self: center;
+}
+.buy-btn:disabled { background: var(--bg3); color: var(--muted); cursor: not-allowed; border: 1px solid var(--border); }
+.buy-btn:not(:disabled):active { transform: scale(.96); }
+
+/* Achievements */
+.ach {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 12px; margin-bottom: 6px; display: flex; gap: 10px; align-items: center;
+  opacity: .45;
+}
+.ach.unlocked { opacity: 1; border-color: var(--orange-dim); }
+.ach-icon { font-size: 1.4rem; }
+.ach-title { font-weight: 700; font-size: .9rem; }
+.ach-desc { font-size: .72rem; color: var(--muted); }
+
+/* Events toast */
+.toast {
+  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%) translateY(20px);
+  background: var(--bg3); border: 1px solid var(--orange); color: var(--text);
+  padding: 12px 16px; border-radius: 12px; max-width: min(420px, 92vw);
+  box-shadow: 0 8px 32px rgba(0,0,0,.5); z-index: 100; opacity: 0;
+  transition: opacity .3s, transform .3s; pointer-events: none; font-size: .9rem; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Modal */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200;
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+  padding: 20px; width: 100%; max-width: 400px; max-height: 85vh; overflow-y: auto;
+}
+.modal h2 { color: var(--orange); margin-bottom: 10px; font-size: 1.2rem; }
+.modal p, .modal li { font-size: .88rem; color: var(--muted); margin-bottom: 8px; }
+.modal ul { padding-left: 18px; margin-bottom: 12px; }
+.close-modal {
+  width: 100%; margin-top: 8px; padding: 10px; border: none; border-radius: 10px;
+  background: var(--orange); color: #111; font-weight: 700; cursor: pointer;
+}
+
+/* Echte Sats / Ads */
+.section-title {
+  font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  margin: 4px 0 8px;
+}
+.ad-banner {
+  background: linear-gradient(135deg, #1a1a22, #252530);
+  border: 1px dashed var(--border); border-radius: var(--radius);
+  height: 60px; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: .75rem; margin-bottom: 12px; position: relative;
+}
+.ad-banner .badge {
+  position: absolute; top: 4px; right: 6px; font-size: .6rem; color: var(--muted);
+  background: var(--bg); padding: 1px 5px; border-radius: 4px;
+}
+.reward-ad-btn {
+  width: 100%; padding: 14px; border: none; border-radius: var(--radius);
+  background: linear-gradient(135deg, #3498db, #2980b9); color: #fff;
+  font-weight: 700; font-size: .95rem; cursor: pointer; margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.reward-ad-btn:disabled { opacity: .5; cursor: not-allowed; }
+.reward-ad-btn:not(:disabled):active { transform: scale(.98); }
+.payout-box {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 10px;
+}
+.payout-box label { display: block; font-size: .75rem; color: var(--muted); margin-bottom: 4px; }
+.payout-box input {
+  width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: .9rem; margin-bottom: 10px;
+}
+.payout-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 9px;
+  background: var(--bg3); color: var(--muted); font-weight: 700; cursor: not-allowed;
+  border: 1px solid var(--border);
+}
+.payout-btn.ready {
+  background: var(--green); color: #111; cursor: pointer; border-color: transparent;
+}
+.hint { font-size: .72rem; color: var(--muted); margin-top: 6px; }
+.boost-badge {
+  display: inline-block; background: var(--blue); color: #fff; font-size: .65rem;
+  font-weight: 700; padding: 2px 7px; border-radius: 99px; margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Log */
+.log {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px; max-height: 220px; overflow-y: auto; font-size: .75rem;
+  font-family: ui-monospace, Menlo, monospace; color: var(--muted);
+}
+.log-entry { padding: 3px 0; border-bottom: 1px solid var(--border); }
+.log-entry:last-child { border-bottom: none; }
+.log-entry .t { color: var(--orange); }
+
+/* Footer nav spacer */
+.footer-note {
+  text-align: center; font-size: .7rem; color: var(--muted); margin-top: 16px; padding: 8px;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(.8); }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.shake { animation: shake .3s ease; }
+
+@media (min-width: 600px) {
+  .app { padding-top: 20px; }
+  .hash-display { font-size: .75rem; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo"><div class="logo-btc">₿</div> Satoshi Miner</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btnHelp" title="Hilfe">?</button>
+      <button class="icon-btn" id="btnReset" title="Zurücksetzen">↺</button>
+    </div>
+  </header>
+
+  <!-- Ad banner slot (stub) -->
+  <div class="ad-banner" id="adBanner" data-ad-slot="banner-top">
+    <span class="badge">ANZEIGE</span>
+    <span id="adBannerText">AdProvider · Banner-Platzhalter</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat wide">
+      <div class="stat-label">Sats (Spiel)</div>
+      <div class="stat-value" id="satsDisplay">0</div>
+      <div class="stat-sub" id="btcDisplay">≈ 0.00000000 BTC</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Hashrate</div>
+      <div class="stat-value small" id="hashrateDisplay">0 H/s</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Blöcke</div>
+      <div class="stat-value small" id="blocksDisplay">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Belohnung</div>
+      <div class="stat-value small" id="rewardDisplay">50</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Schwierigkeit</div>
+      <div class="stat-value small" id="diffDisplay">1</div>
+    </div>
+  </div>
+
+  <div class="mine-area" id="mineArea">
+    <div class="particles" id="particles"></div>
+    <div class="hash-display" id="hashDisplay">Bereit zum Minen… tippe den Button!</div>
+    <div class="target-row">
+      <span>Nonce: <span id="nonceDisplay">0</span></span>
+      <span>Ziel: <span id="targetDisplay">00ff…</span></span>
+    </div>
+    <button class="mine-btn" id="mineBtn" type="button">
+      MINE
+      <span class="sub">tippen / halten</span>
+    </button>
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Block-Fortschritt</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="block-found" id="blockFound">
+      <div class="block-found-inner">
+        <h3>🎉 Block gefunden!</h3>
+        <p id="blockFoundText">+50 Sats</p>
+        <button class="close-modal" id="blockFoundOk" style="margin-top:12px">Weiter minen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="upgrades">Upgrades</button>
+    <button class="tab" data-tab="echte">Echte Sats</button>
+    <button class="tab" data-tab="achievements">Erfolge</button>
+    <button class="tab" data-tab="log">Log</button>
+  </div>
+
+  <div class="panel active" id="panel-upgrades">
+    <div class="section-title">Hardware & Pools</div>
+    <div id="upgradesList"></div>
+  </div>
+
+  <div class="panel" id="panel-echte">
+    <div class="section-title">Werbefinanziert · echte Satoshis</div>
+    <button class="reward-ad-btn" id="rewardAdBtn" type="button">
+      ▶ Werbung ansehen
+      <span style="font-weight:500;font-size:.8rem;opacity:.9">(+Boost / Bonus-Sats)</span>
+    </button>
+    <div class="payout-box">
+      <div class="stat-label">Auszahlbare Sats (Ad-Topf)</div>
+      <div class="stat-value" id="realSatsDisplay" style="margin:4px 0 8px">0</div>
+      <div class="stat-sub" id="realSatsHint">Minimum zur Auszahlung: 100 Sats</div>
+      <label for="lnAddress">Lightning-Adresse (z.B. name@wallet.com)</label>
+      <input type="text" id="lnAddress" placeholder="satoshi@walle.to" autocomplete="off" spellcheck="false">
+      <button class="payout-btn" id="payoutBtn" type="button" disabled>Auszahlen (demnächst)</button>
+      <p class="hint">Echte Auszahlungen laufen über Lightning und werden aus Werbeeinnahmen finanziert. Der Auszahlungs-Hook ist vorbereitet, aber noch deaktiviert.</p>
+    </div>
+    <div class="hint" style="margin-bottom:8px">
+      Hinweis: Spiel-Sats und auszahlbare Sats sind getrennt. Auszahlbare Sats wachsen langsam über Werbung (konservative Rate).
+    </div>
+  </div>
+
+  <div class="panel" id="panel-achievements">
+    <div class="section-title">Erfolge</div>
+    <div id="achievementsList"></div>
+  </div>
+
+  <div class="panel" id="panel-log">
+    <div class="section-title">Ereignis-Log</div>
+    <div class="log" id="eventLog"></div>
+  </div>
+
+  <p class="footer-note">Spielwährung ≠ echtes Bitcoin. Echte Sats nur über Werbe-Auszahlung (Stub).</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="helpModal">
+  <div class="modal">
+    <h2>Wie funktioniert's?</h2>
+    <p>Tippe auf <strong>MINE</strong>, um Hashes zu berechnen (echtes SHA-256 im Browser). Triffst du das Ziel, findest du einen Block und erhältst Satoshis.</p>
+    <ul>
+      <li>Kaufen Upgrades für passive Hashrate</li>
+      <li>Alle 210.000 Blöcke: Halving (Belohnung halbieren)</li>
+      <li>Schwierigkeit passt sich an deine Hashrate an</li>
+      <li>Zufällige Events bringen Chancen & Risiken</li>
+      <li>„Werbung ansehen“ gibt Boosts & echte Bonus-Sats (simuliert)</li>
+    </ul>
+    <p>Fortschritt wird lokal gespeichert.</p>
+    <button class="close-modal" id="helpClose">Verstanden</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="adModal">
+  <div class="modal" style="text-align:center">
+    <h2>📺 Werbung</h2>
+    <p id="adModalText">Simulierte Rewarded-Video-Anzeige…</p>
+    <div class="progress-bar" style="margin:16px 0;height:10px"><div class="progress-fill" id="adProgress" style="width:0%"></div></div>
+    <p class="hint" id="adCountdown">5 Sekunden</p>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ============================================================
+   AdProvider STUB – future integration point for ad networks
+   ============================================================
+   Networks that commonly support rewarded video / playable ads
+   and may accept crypto/mining-themed games (policies vary;
+   always check current ToS & restricted categories):
+   - Google AdMob (Rewarded) – strict crypto rules, often limited
+   - AppLovin MAX / AppLovin – rewarded + mediation
+   - Unity Ads – rewarded video, casual games
+   - ironSource / LevelPlay – rewarded, mediation
+   - Chartboost – rewarded interstitial
+   - Tapjoy – offerwall + rewarded (good for "earn" games)
+   - Ayet Studios / BitLabs / Torox – offerwalls, often friendlier
+     to crypto/reward apps than classic IAB networks
+   - PropellerAds / Adsterra – web rewarded / pops (compliance needed)
+   Crypto-native / Lightning-friendly payout partners (not classic ads):
+   - Strike / Lightspark / LNBits / Voltage for Lightning payouts
+   ============================================================ */
+const AdProvider = {
+  /** @returns {Promise<{ok:boolean, placement:string}>} */
+  async showBanner(placementId) {
+    // STUB: no real network call
+    const el = document.getElementById('adBannerText');
+    if (el) el.textContent = `AdProvider · Banner [${placementId}] – Stub`;
+    return { ok: true, placement: placementId };
+  },
+  /**
+   * Simulated rewarded video (5s placeholder).
+   * @returns {Promise<{ok:boolean, rewarded:boolean}>}
+   */
+  async showRewardedVideo(placementId) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('adModal');
+      const fill = document.getElementById('adProgress');
+      const cd = document.getElementById('adCountdown');
+      const txt = document.getElementById('adModalText');
+      txt.textContent = `Platzierung: ${placementId}\n(Simuliert – kein Netzwerk)`;
+      modal.classList.add('show');
+      fill.style.width = '0%';
+      let left = 5;
+      cd.textContent = `${left} Sekunden`;
+      const t0 = Date.now();
+      const iv = setInterval(() => {
+        const elapsed = (Date.now() - t0) / 1000;
+        const pct = Math.min(100, (elapsed / 5) * 100);
+        fill.style.width = pct + '%';
+        left = Math.max(0, Math.ceil(5 - elapsed));
+        cd.textContent = left > 0 ? `${left} Sekunden` : 'Fertig!';
+        if (elapsed >= 5) {
+          clearInterval(iv);
+          modal.classList.remove('show');
+          resolve({ ok: true, rewarded: true });
+        }
+      }, 100);
+    });
+  },
+};
+
+/* ============================================================
+   Lightning payout STUB – DISABLED
+   ============================================================ */
+/**
+ * Request a Lightning payout of `sats` to `lnAddress`.
+ * DISABLED: wire to LNBits / Strike / LND when ads fund a wallet.
+ * @param {number} sats
+ * @param {string} lnAddress
+ * @returns {Promise<{ok:boolean, error?:string}>}
+ */
+async function requestPayout(sats, lnAddress) {
+  // --- STUB: intentionally disabled ---
+  console.info('[requestPayout STUB]', { sats, lnAddress });
+  return {
+    ok: false,
+    error: 'Auszahlung noch nicht aktiviert. Lightning-Hook ist vorbereitet.',
+  };
+}
+
+/* ---------- Game constants ---------- */
+const SAVE_KEY = 'satoshi-miner-v1';
+const MIN_PAYOUT_SATS = 100;
+const HALVING_INTERVAL = 210; // toy: every 210 blocks (real BTC: 210000)
+const BASE_REWARD = 50;       // sats per block at epoch 0
+const TICK_MS = 100;
+const REAL_SATS_PER_REWARD_AD = 2; // conservative ad-funded sats
+const REAL_SATS_PASSIVE_PER_MIN = 0.05; // tiny drip while playing
+
+const UPGRADES = [
+  { id: 'cpu',     icon: '🖥️', name: 'CPU-Kern',        desc: 'Extra Klick-Power',           baseCost: 15,    costMult: 1.15, power: 1,     type: 'click' },
+  { id: 'gpu',     icon: '🎮', name: 'Gaming-GPU',      desc: 'Passive Hashrate',            baseCost: 100,   costMult: 1.18, power: 2,     type: 'passive' },
+  { id: 'gpu2',    icon: '🖥️', name: 'Mining-Rig',      desc: 'Mehr GPUs im Rack',           baseCost: 500,   costMult: 1.2,  power: 12,    type: 'passive' },
+  { id: 'asic',    icon: '⚡', name: 'ASIC Miner',      desc: 'Dedizierte Mining-Chips',     baseCost: 2500,  costMult: 1.22, power: 80,    type: 'passive' },
+  { id: 'farm',    icon: '🏭', name: 'Mining-Farm',     desc: 'Halle voller ASICs',          baseCost: 15000, costMult: 1.25, power: 500,   type: 'passive' },
+  { id: 'pool',    icon: '🌊', name: 'Mining-Pool',     desc: '+15% Belohnung pro Level',    baseCost: 800,   costMult: 1.35, power: 0.15,  type: 'reward' },
+  { id: 'cool',    icon: '❄️', name: 'Wasserkühlung',   desc: '+10% Hashrate pro Level',     baseCost: 1200,  costMult: 1.3,  power: 0.10,  type: 'boost' },
+  { id: 'solar',   icon: '☀️', name: 'Solaranlage',     desc: 'Günstigerer Strom: -5% Kosten',baseCost: 5000, costMult: 1.4,  power: 0.05,  type: 'discount' },
+];
+
+const ACHIEVEMENTS = [
+  { id: 'first',    icon: '🥇', name: 'Erster Block',     desc: 'Finde deinen ersten Block',      check: s => s.blocks >= 1 },
+  { id: 'ten',      icon: '🔟', name: 'Zehn Blöcke',      desc: '10 Blöcke gemined',              check: s => s.blocks >= 10 },
+  { id: 'hundred',  icon: '💯', name: 'Hundert Blöcke',   desc: '100 Blöcke gemined',             check: s => s.blocks >= 100 },
+  { id: 'sats1k',   icon: '💰', name: '1.000 Sats',       desc: 'Besitze 1.000 Spiel-Sats',       check: s => s.sats >= 1000 },
+  { id: 'sats1m',   icon: '🤑', name: 'Millionär',        desc: '1.000.000 Spiel-Sats',           check: s => s.sats >= 1e6 },
+  { id: 'gpu',      icon: '🎮', name: 'GPU-Gang',         desc: 'Kaufe eine Gaming-GPU',          check: s => (s.owned.gpu||0) >= 1 },
+  { id: 'asic',     icon: '⚡', name: 'ASIC-Ära',         desc: 'Kaufe einen ASIC',               check: s => (s.owned.asic||0) >= 1 },
+  { id: 'farm',     icon: '🏭', name: 'Farm-Besitzer',    desc: 'Besitze eine Mining-Farm',       check: s => (s.owned.farm||0) >= 1 },
+  { id: 'halving',  icon: '✂️', name: 'Halving erlebt',   desc: 'Erlebe ein Halving',             check: s => s.halvings >= 1 },
+  { id: 'ads',      icon: '📺', name: 'Zuschauer',        desc: 'Sieh dir 3 Werbespots an',       check: s => s.adsWatched >= 3 },
+  { id: 'real10',   icon: '⚡', name: 'Echte Sats',       desc: 'Verdiene 10 auszahlbare Sats',   check: s => s.realSats >= 10 },
+  { id: 'hash1k',   icon: '🔥', name: 'Kilohash',         desc: 'Erreiche 1.000 H/s',             check: s => calcHashrate(s) >= 1000 },
+];
+
+const RANDOM_EVENTS = [
+  { id: 'bull',   weight: 20, title: '🐂 Bullenmarkt!',   text: 'Bitcoin steigt – Bonus +{n} Sats!', apply: s => { const n = Math.floor(20 + s.blocks * 0.5); s.sats += n; return n; } },
+  { id: 'bear',   weight: 12, title: '🐻 Bärenmarkt',     text: 'Kurs dippt – du verlierst {n} Sats.', apply: s => { const n = Math.min(s.sats, Math.floor(10 + s.blocks * 0.3)); s.sats -= n; return n; } },
+  { id: 'lucky',  weight: 15, title: '🍀 Glücksnonce!',   text: 'Sofort-Block! +{n} Sats', apply: s => { const n = currentReward(s); s.sats += n; s.blocks++; return n; } },
+  { id: 'heat',   weight: 12, title: '🔥 Überhitzung',    text: 'Hashrate 30s um 40% reduziert', apply: s => { s.tempDebuffUntil = Date.now() + 30000; return 40; } },
+  { id: 'cool',   weight: 15, title: '❄️ Perfekte Kühlung', text: 'Hashrate 45s um 50% erhöht!', apply: s => { s.tempBoostUntil = Date.now() + 45000; return 50; } },
+  { id: 'fork',   weight: 8,  title: '🔀 Soft-Fork',      text: 'Schwierigkeit leicht gesenkt', apply: s => { s.diffBonus = Math.max(0, (s.diffBonus||0) - 0.15); return 1; } },
+  { id: 'sponsor',weight: 10, title: '📣 Sponsor',        text: '+{n} echte Ad-Sats!', apply: s => { const n = 1; s.realSats += n; return n; } },
+];
+
+/* ---------- State ---------- */
+function defaultState() {
+  return {
+    sats: 0,
+    realSats: 0,
+    blocks: 0,
+    nonce: 0,
+    totalHashes: 0,
+    owned: {},
+    unlocked: {},
+    halvings: 0,
+    adsWatched: 0,
+    adBoostUntil: 0,
+    tempBoostUntil: 0,
+    tempDebuffUntil: 0,
+    diffBonus: 0,
+    lnAddress: '',
+    lastSave: Date.now(),
+    lastTick: Date.now(),
+    lastEvent: Date.now(),
+    lastRealDrip: Date.now(),
+    progress: 0, // 0..1 toward next block from passive+click pool
+  };
+}
+
+let state = defaultState();
+let hashing = false;
+let holdTimer = null;
+let toastTimer = null;
+
+/* ---------- Helpers ---------- */
+function fmt(n) {
+  if (!Number.isFinite(n)) return '0';
+  if (n >= 1e12) return (n/1e12).toFixed(2) + ' T';
+  if (n >= 1e9) return (n/1e9).toFixed(2) + ' B';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + ' M';
+  if (n >= 1e4) return (n/1e3).toFixed(1) + ' K';
+  if (n >= 1000) return n.toLocaleString('de-DE', { maximumFractionDigits: 0 });
+  if (Number.isInteger(n)) return String(n);
+  return n.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+}
+
+function satsToBtc(s) {
+  return (s / 1e8).toFixed(8);
+}
+
+function currentEpoch(s) {
+  return Math.floor(s.blocks / HALVING_INTERVAL);
+}
+
+function currentReward(s) {
+  const epoch = currentEpoch(s);
+  let r = BASE_REWARD / Math.pow(2, epoch);
+  const poolLvl = s.owned.pool || 0;
+  const pool = UPGRADES.find(u => u.id === 'pool');
+  r *= (1 + poolLvl * pool.power);
+  return Math.max(1, Math.floor(r));
+}
+
+function costMultDiscount(s) {
+  const lvl = s.owned.solar || 0;
+  const u = UPGRADES.find(x => x.id === 'solar');
+  return Math.max(0.5, 1 - lvl * u.power);
+}
+
+function upgradeCost(u, owned) {
+  return Math.floor(u.baseCost * Math.pow(u.costMult, owned) * costMultDiscount(state));
+}
+
+function calcHashrate(s) {
+  let h = 0;
+  for (const u of UPGRADES) {
+    if (u.type !== 'passive') continue;
+    h += (s.owned[u.id] || 0) * u.power;
+  }
+  const coolLvl = s.owned.cool || 0;
+  const cool = UPGRADES.find(x => x.id === 'cool');
+  h *= (1 + coolLvl * cool.power);
+  const now = Date.now();
+  if (now < (s.adBoostUntil || 0)) h *= 2;
+  if (now < (s.tempBoostUntil || 0)) h *= 1.5;
+  if (now < (s.tempDebuffUntil || 0)) h *= 0.6;
+  return h;
+}
+
+function clickPower(s) {
+  let p = 1 + (s.owned.cpu || 0);
+  const now = Date.now();
+  if (now < (s.adBoostUntil || 0)) p *= 2;
+  return p;
+}
+
+/** Toy difficulty: leading zero nibbles loosely tied to hashrate & blocks */
+function difficultyNibbles(s) {
+  const base = 1 + Math.floor(Math.log2(1 + s.blocks / 5));
+  const hr = calcHashrate(s);
+  const fromHr = Math.floor(Math.log10(1 + hr));
+  const bonus = Math.floor(s.diffBonus || 0);
+  return Math.min(5, Math.max(1, base + fromHr + bonus));
+}
+
+function targetPrefix(nibbles) {
+  return '0'.repeat(nibbles);
+}
+
+async function sha256Hex(message) {
+  const data = new TextEncoder().encode(message);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ---------- Mining ---------- */
+async function doHash(clicks = 1) {
+  const nib = difficultyNibbles(state);
+  const prefix = targetPrefix(nib);
+  let lastHash = '';
+  const power = clickPower(state);
+  // Each "click burst" tries a few nonces; also adds progress based on power vs difficulty
+  const tries = Math.min(8, 1 + Math.floor(power / 2));
+  let found = false;
+  for (let i = 0; i < tries; i++) {
+    state.nonce++;
+    state.totalHashes++;
+    const payload = `satoshi-miner|b${state.blocks}|n${state.nonce}|${Date.now()}`;
+    lastHash = await sha256Hex(payload);
+    if (lastHash.startsWith(prefix)) {
+      found = true;
+      break;
+    }
+  }
+  // Progress contribution (so blocks still come at a fun pace on hard difficulty)
+  const need = Math.pow(16, nib) / 8; // rough expected hashes scaled down for fun
+  state.progress += (tries * power) / Math.max(need, 10);
+  if (state.progress >= 1) {
+    state.progress = 0;
+    found = true;
+  }
+  updateHashUI(lastHash, nib, prefix);
+  if (found) onBlockFound(lastHash);
+  else maybeSpawnParticle(false);
+  return found;
+}
+
+function onBlockFound(hash) {
+  const beforeEpoch = currentEpoch(state);
+  const reward = currentReward(state);
+  state.sats += reward;
+  state.blocks++;
+  state.progress = 0;
+  const afterEpoch = currentEpoch(state);
+  if (afterEpoch > beforeEpoch) {
+    state.halvings = afterEpoch;
+    logEvent(`✂️ HALVING! Belohnung jetzt ${currentReward(state)} Sats`);
+    showToast(`✂️ Halving! Neue Belohnung: ${currentReward(state)} Sats`);
+  }
+  logEvent(`🧱 Block #${state.blocks} · +${reward} Sats · ${hash.slice(0, 16)}…`);
+  showBlockModal(reward, hash);
+  maybeSpawnParticle(true);
+  checkAchievements();
+  save();
+  render();
+}
+
+function showBlockModal(reward, hash) {
+  const el = document.getElementById('blockFound');
+  document.getElementById('blockFoundText').textContent =
+    `+${fmt(reward)} Sats\n${hash.slice(0, 24)}…`;
+  el.classList.add('show');
+}
+
+/* ---------- Passive tick ---------- */
+function tick() {
+  const now = Date.now();
+  const dt = Math.min(2, (now - state.lastTick) / 1000);
+  state.lastTick = now;
+
+  const hr = calcHashrate(state);
+  if (hr > 0) {
+    const nib = difficultyNibbles(state);
+    const need = Math.pow(16, nib) / 6;
+    state.progress += (hr * dt) / Math.max(need, 5);
+    state.totalHashes += hr * dt;
+    if (state.progress >= 1) {
+      // Simulate finding with a synthetic hash display
+      state.progress = 0;
+      const fake = '0'.repeat(nib) + Math.random().toString(16).slice(2).padEnd(64, '0').slice(0, 64 - nib);
+      onBlockFound(fake.slice(0, 64));
+    }
+  }
+
+  // Tiny real-sats drip while session active (ad-funded fiction)
+  if (now - state.lastRealDrip > 60000) {
+    const mins = (now - state.lastRealDrip) / 60000;
+    state.realSats += mins * REAL_SATS_PASSIVE_PER_MIN;
+    state.lastRealDrip = now;
+  }
+
+  // Random events ~ every 45–90s
+  if (now - state.lastEvent > 45000 + Math.random() * 45000) {
+    state.lastEvent = now;
+    triggerRandomEvent();
+  }
+
+  updateProgressUI();
+  updateStatsUI();
+  updateBoostBadges();
+}
+
+function triggerRandomEvent() {
+  const total = RANDOM_EVENTS.reduce((a, e) => a + e.weight, 0);
+  let r = Math.random() * total;
+  let ev = RANDOM_EVENTS[0];
+  for (const e of RANDOM_EVENTS) {
+    r -= e.weight;
+    if (r <= 0) { ev = e; break; }
+  }
+  const n = ev.apply(state);
+  const text = ev.text.replace('{n}', fmt(n));
+  logEvent(`${ev.title} ${text}`);
+  showToast(`${ev.title} ${text}`);
+  checkAchievements();
+  render();
+  save();
+}
+
+/* ---------- Upgrades ---------- */
+function buyUpgrade(id) {
+  const u = UPGRADES.find(x => x.id === id);
+  if (!u) return;
+  const owned = state.owned[id] || 0;
+  const cost = upgradeCost(u, owned);
+  if (state.sats < cost) return;
+  state.sats -= cost;
+  state.owned[id] = owned + 1;
+  logEvent(`🛒 ${u.name} gekauft (Lvl ${owned + 1})`);
+  checkAchievements();
+  render();
+  save();
+}
+
+/* ---------- Achievements ---------- */
+function checkAchievements() {
+  for (const a of ACHIEVEMENTS) {
+    if (state.unlocked[a.id]) continue;
+    if (a.check(state)) {
+      state.unlocked[a.id] = true;
+      state.sats += 25;
+      showToast(`🏆 Erfolg: ${a.name} (+25 Sats)`);
+      logEvent(`🏆 Erfolg freigeschaltet: ${a.name}`);
+    }
+  }
+}
+
+/* ---------- Ads / real sats ---------- */
+async function watchRewardedAd() {
+  const btn = document.getElementById('rewardAdBtn');
+  btn.disabled = true;
+  try {
+    const res = await AdProvider.showRewardedVideo('rewarded-hashboost');
+    if (res.ok && res.rewarded) {
+      state.adsWatched++;
+      state.adBoostUntil = Date.now() + 60000; // 60s 2x hashrate
+      state.realSats += REAL_SATS_PER_REWARD_AD;
+      state.sats += 15; // small game bonus
+      showToast(`📺 +${REAL_SATS_PER_REWARD_AD} echte Sats · 60s 2× Hashrate · +15 Spiel-Sats`);
+      logEvent(`📺 Rewarded Ad angesehen · +${REAL_SATS_PER_REWARD_AD} echte Sats`);
+      checkAchievements();
+      render();
+      save();
+    }
+  } finally {
+    // cooldown 20s
+    setTimeout(() => { btn.disabled = false; }, 20000);
+  }
+}
+
+async function tryPayout() {
+  const addr = document.getElementById('lnAddress').value.trim();
+  state.lnAddress = addr;
+  if (!addr || !addr.includes('@')) {
+    showToast('Bitte gültige Lightning-Adresse eingeben');
+    return;
+  }
+  if (state.realSats < MIN_PAYOUT_SATS) {
+    showToast(`Mindestens ${MIN_PAYOUT_SATS} Sats nötig`);
+    return;
+  }
+  const amount = Math.floor(state.realSats);
+  const result = await requestPayout(amount, addr);
+  if (!result.ok) {
+    showToast('⛔ ' + (result.error || 'Auszahlung deaktiviert'));
+    logEvent(`⛔ Payout-Stub: ${result.error}`);
+  } else {
+    state.realSats -= amount;
+    showToast(`✅ ${amount} Sats gesendet`);
+    render();
+    save();
+  }
+}
+
+/* ---------- Save / Load ---------- */
+function save() {
+  state.lastSave = Date.now();
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (_) {}
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    state = Object.assign(defaultState(), data);
+    state.owned = data.owned || {};
+    state.unlocked = data.unlocked || {};
+  } catch (_) {
+    state = defaultState();
+  }
+}
+
+function resetGame() {
+  if (!confirm('Wirklich allen Fortschritt löschen?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  state = defaultState();
+  render();
+  logEvent('Spiel zurückgesetzt');
+  showToast('Fortschritt gelöscht');
+}
+
+/* ---------- UI ---------- */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function logEvent(msg) {
+  const box = document.getElementById('eventLog');
+  const time = new Date().toLocaleTimeString('de-DE');
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `<span class="t">[${time}]</span> ${escapeHtml(msg)}`;
+  box.insertBefore(div, box.firstChild);
+  while (box.children.length > 80) box.removeChild(box.lastChild);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function updateHashUI(hash, nib, prefix) {
+  const el = document.getElementById('hashDisplay');
+  if (!hash) return;
+  const ok = hash.startsWith(prefix);
+  if (ok) {
+    el.innerHTML = `<span class="ok">${hash}</span>`;
+  } else {
+    el.textContent = hash;
+  }
+  document.getElementById('nonceDisplay').textContent = fmt(state.nonce);
+  document.getElementById('targetDisplay').textContent = prefix + '…';
+}
+
+function updateProgressUI() {
+  const pct = Math.min(100, state.progress * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct.toFixed(1) + '%';
+}
+
+function updateStatsUI() {
+  document.getElementById('satsDisplay').textContent = fmt(Math.floor(state.sats));
+  document.getElementById('btcDisplay').textContent = `≈ ${satsToBtc(Math.floor(state.sats))} BTC`;
+  document.getElementById('hashrateDisplay').textContent = fmt(calcHashrate(state)) + ' H/s';
+  document.getElementById('blocksDisplay').textContent = fmt(state.blocks);
+  document.getElementById('rewardDisplay').textContent = fmt(currentReward(state)) + ' sats';
+  document.getElementById('diffDisplay').textContent = String(difficultyNibbles(state));
+  document.getElementById('realSatsDisplay').textContent = fmt(Math.floor(state.realSats * 100) / 100);
+  document.getElementById('realSatsHint').textContent =
+    `Minimum zur Auszahlung: ${MIN_PAYOUT_SATS} Sats · Fortschritt: ${Math.min(100, Math.floor(state.realSats / MIN_PAYOUT_SATS * 100))}%`;
+  const payBtn = document.getElementById('payoutBtn');
+  const can = state.realSats >= MIN_PAYOUT_SATS;
+  payBtn.disabled = !can;
+  payBtn.classList.toggle('ready', can);
+  payBtn.textContent = can ? `Auszahlen (${Math.floor(state.realSats)} Sats)` : 'Auszahlen (demnächst)';
+}
+
+function updateBoostBadges() {
+  const hrEl = document.getElementById('hashrateDisplay');
+  const now = Date.now();
+  let badge = '';
+  if (now < state.adBoostUntil) badge = ' 2×AD';
+  else if (now < state.tempBoostUntil) badge = ' BOOST';
+  else if (now < state.tempDebuffUntil) badge = ' HOT';
+  // keep text clean via stats refresh
+  void badge;
+}
+
+function renderUpgrades() {
+  const box = document.getElementById('upgradesList');
+  box.innerHTML = '';
+  for (const u of UPGRADES) {
+    const owned = state.owned[u.id] || 0;
+    const cost = upgradeCost(u, owned);
+    const can = state.sats >= cost;
+    let meta = '';
+    if (u.type === 'passive') meta = `+${u.power} H/s · Besitz: ${owned}`;
+    else if (u.type === 'click') meta = `+${u.power} Klick · Besitz: ${owned}`;
+    else if (u.type === 'reward') meta = `+${(u.power*100).toFixed(0)}% Belohnung · Lvl ${owned}`;
+    else if (u.type === 'boost') meta = `+${(u.power*100).toFixed(0)}% Hashrate · Lvl ${owned}`;
+    else if (u.type === 'discount') meta = `−${(u.power*100).toFixed(0)}% Kosten · Lvl ${owned}`;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-icon">${u.icon}</div>
+      <div class="card-body">
+        <div class="card-title">${u.name}</div>
+        <div class="card-desc">${u.desc}</div>
+        <div class="card-meta">${meta}</div>
+      </div>
+      <button class="buy-btn" data-id="${u.id}" ${can ? '' : 'disabled'}>${fmt(cost)} sats</button>`;
+    box.appendChild(card);
+  }
+  box.querySelectorAll('.buy-btn').forEach(btn => {
+    btn.addEventListener('click', () => buyUpgrade(btn.dataset.id));
+  });
+}
+
+function renderAchievements() {
+  const box = document.getElementById('achievementsList');
+  box.innerHTML = '';
+  for (const a of ACHIEVEMENTS) {
+    const ok = !!state.unlocked[a.id];
+    const div = document.createElement('div');
+    div.className = 'ach' + (ok ? ' unlocked' : '');
+    div.innerHTML = `<div class="ach-icon">${a.icon}</div>
+      <div><div class="ach-title">${a.name}${ok ? ' ✓' : ''}</div>
+      <div class="ach-desc">${a.desc}</div></div>`;
+    box.appendChild(div);
+  }
+}
+
+function render() {
+  updateStatsUI();
+  updateProgressUI();
+  renderUpgrades();
+  renderAchievements();
+  document.getElementById('targetDisplay').textContent = targetPrefix(difficultyNibbles(state)) + '…';
+  document.getElementById('lnAddress').value = state.lnAddress || '';
+}
+
+function maybeSpawnParticle(big) {
+  const layer = document.getElementById('particles');
+  const p = document.createElement('div');
+  const x = 40 + Math.random() * 20;
+  p.style.cssText = `position:absolute;left:${x}%;bottom:45%;font-size:${big?1.4:0.9}rem;
+    animation:floatUp ${big?1.2:0.7}s ease-out forwards;pointer-events:none;`;
+  p.textContent = big ? '⚡' : '·';
+  layer.appendChild(p);
+  setTimeout(() => p.remove(), 1300);
+}
+
+/* ---------- Events ---------- */
+function setupMineButton() {
+  const btn = document.getElementById('mineBtn');
+  let busy = false;
+
+  const pulse = () => {
+    btn.classList.add('pulse');
+    setTimeout(() => btn.classList.remove('pulse'), 80);
+  };
+
+  const once = async () => {
+    if (busy) return;
+    busy = true;
+    pulse();
+    try { await doHash(1); } finally { busy = false; renderUpgrades(); updateStatsUI(); }
+  };
+
+  btn.addEventListener('click', (e) => { e.preventDefault(); once(); });
+
+  // Hold to auto-mine
+  const startHold = (e) => {
+    e.preventDefault();
+    once();
+    holdTimer = setInterval(once, 180);
+  };
+  const endHold = () => { clearInterval(holdTimer); holdTimer = null; };
+  btn.addEventListener('mousedown', startHold);
+  btn.addEventListener('mouseup', endHold);
+  btn.addEventListener('mouseleave', endHold);
+  btn.addEventListener('touchstart', startHold, { passive: false });
+  btn.addEventListener('touchend', endHold);
+  btn.addEventListener('touchcancel', endHold);
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+function setupUI() {
+  document.getElementById('btnHelp').addEventListener('click', () => {
+    document.getElementById('helpModal').classList.add('show');
+  });
+  document.getElementById('helpClose').addEventListener('click', () => {
+    document.getElementById('helpModal').classList.remove('show');
+  });
+  document.getElementById('helpModal').addEventListener('click', (e) => {
+    if (e.target.id === 'helpModal') e.target.classList.remove('show');
+  });
+  document.getElementById('btnReset').addEventListener('click', resetGame);
+  document.getElementById('blockFoundOk').addEventListener('click', () => {
+    document.getElementById('blockFound').classList.remove('show');
+  });
+  document.getElementById('rewardAdBtn').addEventListener('click', watchRewardedAd);
+  document.getElementById('payoutBtn').addEventListener('click', tryPayout);
+  document.getElementById('lnAddress').addEventListener('change', (e) => {
+    state.lnAddress = e.target.value.trim();
+    save();
+  });
+}
+
+/* ---------- Boot ---------- */
+function boot() {
+  load();
+  setupMineButton();
+  setupTabs();
+  setupUI();
+  AdProvider.showBanner('banner-top');
+  render();
+  logEvent('Willkommen bei Satoshi Miner! Tippe MINE zum Start.');
+  setInterval(tick, TICK_MS);
+  setInterval(save, 15000);
+  // Expose stubs for debugging / future wiring
+  window.SatoshiMiner = { state, requestPayout, AdProvider, save, load };
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
