@@ -407,7 +407,9 @@ body {
 
 <div class="bottom-ad" id="bottomAd">
   <button class="bottom-ad-close" id="bottomAdClose" title="Ausblenden">✕</button>
-  <div class="aads-slot" data-aads-slot="bottom"></div>
+  <!-- BEGIN AADS AD UNIT 2458749 (statisch, für A-Ads-Verifizierung) -->
+  <div class="aads-slot live" id="frame" data-aads-static="1"><span class="badge">ANZEIGE</span><iframe data-aa='2458749' src='//acceptable.a-ads.com/2458749/?size=Adaptive' title="Anzeige" scrolling="no" style='border:0; padding:0; width:100%; overflow:hidden; display:block; margin:auto'></iframe></div>
+  <!-- END AADS AD UNIT 2458749 -->
 </div>
 
 <div class="toast" id="toast"></div>
@@ -450,7 +452,7 @@ body {
    z.B. const AADS_UNIT_ID = '2448856';
    Leer lassen ('') = keine echten Anzeigen, nur Platzhalter.
    ============================================================ */
-const AADS_UNIT_ID = '';
+const AADS_UNIT_ID = '2458749';
 
 /* AdProvider – A-Ads (aads.com) Integration
    Embed-Format laut AADS-Hilfe:
@@ -469,7 +471,7 @@ const AdProvider = {
     const id = String(AADS_UNIT_ID).trim();
     const f = document.createElement('iframe');
     f.setAttribute('data-aa', id);
-    f.src = 'https://ad.a-ads.com/' + id + '/?size=Adaptive';
+    f.src = 'https://acceptable.a-ads.com/' + id + '/?size=Adaptive';
     f.setAttribute('loading', 'lazy');
     f.setAttribute('scrolling', 'no');
     f.title = 'Anzeige';
