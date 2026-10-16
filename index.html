@@ -174,7 +174,7 @@ body {
 
 /* Events toast */
 .toast {
-  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%) translateY(20px);
+  position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(20px);
   background: var(--bg3); border: 1px solid var(--orange); color: var(--text);
   padding: 12px 16px; border-radius: 12px; max-width: min(420px, 92vw);
   box-shadow: 0 8px 32px rgba(0,0,0,.5); z-index: 100; opacity: 0;
@@ -247,6 +247,23 @@ body {
   vertical-align: middle;
 }
 
+/* A-Ads slots */
+.aads-slot { width:100%; margin:0 0 12px; border-radius:var(--radius); overflow:hidden; position:relative;
+  background:linear-gradient(135deg,#1a1a22,#252530); border:1px dashed var(--border); min-height:60px;
+  display:flex; align-items:center; justify-content:center; }
+.aads-slot.live { border-style:solid; background:transparent; }
+.aads-slot iframe { border:0; padding:0; width:100%; height:90px; overflow:hidden; display:block; margin:auto; }
+.aads-slot .badge { position:absolute; top:4px; right:6px; font-size:.6rem; color:var(--muted); background:var(--bg); padding:1px 5px; border-radius:4px; z-index:1; }
+.aads-ph { color:var(--muted); font-size:.75rem; text-align:center; padding:8px; }
+.bottom-ad { position:fixed; left:0; right:0; bottom:0; z-index:50; background:rgba(13,13,15,.96);
+  border-top:1px solid var(--border); padding:4px 8px; }
+.bottom-ad .aads-slot { max-width:520px; margin:0 auto; min-height:50px; }
+.bottom-ad .aads-slot iframe { height:60px; }
+.bottom-ad-close { position:absolute; top:-12px; right:10px; width:24px; height:24px; border-radius:50%;
+  border:1px solid var(--border); background:var(--bg3); color:var(--muted); cursor:pointer; font-size:.75rem; z-index:2; }
+#adModalSlot { margin:12px 0; }
+#adModalSlot iframe { height:250px; }
+
 /* Log */
 .log {
   background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
@@ -290,11 +307,6 @@ body {
     </div>
   </header>
 
-  <!-- Ad banner slot (stub) -->
-  <div class="ad-banner" id="adBanner" data-ad-slot="banner-top">
-    <span class="badge">ANZEIGE</span>
-    <span id="adBannerText">AdProvider · Banner-Platzhalter</span>
-  </div>
 
   <div class="stats">
     <div class="stat wide">
@@ -357,6 +369,7 @@ body {
   <div class="panel active" id="panel-upgrades">
     <div class="section-title">Hardware & Pools</div>
     <div id="upgradesList"></div>
+    <div class="aads-slot" data-aads-slot="upgrades"></div>
   </div>
 
   <div class="panel" id="panel-echte">
@@ -372,7 +385,7 @@ body {
       <label for="lnAddress">Lightning-Adresse (z.B. name@wallet.com)</label>
       <input type="text" id="lnAddress" placeholder="satoshi@walle.to" autocomplete="off" spellcheck="false">
       <button class="payout-btn" id="payoutBtn" type="button" disabled>Auszahlen (demnächst)</button>
-      <p class="hint">Echte Auszahlungen laufen über Lightning und werden aus Werbeeinnahmen finanziert. Der Auszahlungs-Hook ist vorbereitet, aber noch deaktiviert.</p>
+      <p class="hint">Pro Werbung max. 0,5 echte Sats, höchstens 10 pro Tag. Echte Auszahlungen laufen über Lightning und werden aus Werbeeinnahmen finanziert. Der Auszahlungs-Hook ist vorbereitet, aber noch deaktiviert.</p>
     </div>
     <div class="hint" style="margin-bottom:8px">
       Hinweis: Spiel-Sats und auszahlbare Sats sind getrennt. Auszahlbare Sats wachsen langsam über Werbung (konservative Rate).
@@ -390,6 +403,11 @@ body {
   </div>
 
   <p class="footer-note">Spielwährung ≠ echtes Bitcoin. Echte Sats nur über Werbe-Auszahlung (Stub).</p>
+</div>
+
+<div class="bottom-ad" id="bottomAd">
+  <button class="bottom-ad-close" id="bottomAdClose" title="Ausblenden">✕</button>
+  <div class="aads-slot" data-aads-slot="bottom"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -413,7 +431,8 @@ body {
 <div class="modal-bg" id="adModal">
   <div class="modal" style="text-align:center">
     <h2>📺 Werbung</h2>
-    <p id="adModalText">Simulierte Rewarded-Video-Anzeige…</p>
+    <p id="adModalText">Anzeige wird geladen…</p>
+    <div class="aads-slot" id="adModalSlot"></div>
     <div class="progress-bar" style="margin:16px 0;height:10px"><div class="progress-fill" id="adProgress" style="width:0%"></div></div>
     <p class="hint" id="adCountdown">5 Sekunden</p>
   </div>
@@ -424,57 +443,65 @@ body {
 'use strict';
 
 /* ============================================================
-   AdProvider STUB – future integration point for ad networks
+   A-ADS KONFIGURATION  ← HIER DIE AD-UNIT-ID EINTRAGEN
    ============================================================
-   Networks that commonly support rewarded video / playable ads
-   and may accept crypto/mining-themed games (policies vary;
-   always check current ToS & restricted categories):
-   - Google AdMob (Rewarded) – strict crypto rules, often limited
-   - AppLovin MAX / AppLovin – rewarded + mediation
-   - Unity Ads – rewarded video, casual games
-   - ironSource / LevelPlay – rewarded, mediation
-   - Chartboost – rewarded interstitial
-   - Tapjoy – offerwall + rewarded (good for "earn" games)
-   - Ayet Studios / BitLabs / Torox – offerwalls, often friendlier
-     to crypto/reward apps than classic IAB networks
-   - PropellerAds / Adsterra – web rewarded / pops (compliance needed)
-   Crypto-native / Lightning-friendly payout partners (not classic ads):
-   - Strike / Lightspark / LNBits / Voltage for Lightning payouts
+   Ad-Unit auf https://aads.com anlegen (Publisher → Ad unit,
+   Größe "Adaptive"), dann die numerische ID hier eintragen,
+   z.B. const AADS_UNIT_ID = '2448856';
+   Leer lassen ('') = keine echten Anzeigen, nur Platzhalter.
    ============================================================ */
+const AADS_UNIT_ID = '';
+
+/* AdProvider – A-Ads (aads.com) Integration
+   Embed-Format laut AADS-Hilfe:
+   <iframe data-aa="ID" src="//ad.a-ads.com/ID/?size=Adaptive"></iframe>
+   data-aa und die ID im src müssen identisch sein. */
 const AdProvider = {
-  /** @returns {Promise<{ok:boolean, placement:string}>} */
-  async showBanner(placementId) {
-    // STUB: no real network call
-    const el = document.getElementById('adBannerText');
-    if (el) el.textContent = `AdProvider · Banner [${placementId}] – Stub`;
-    return { ok: true, placement: placementId };
+  enabled() { return /^\d+$/.test(String(AADS_UNIT_ID).trim()); },
+  mount(container) {
+    if (!container) return false;
+    container.innerHTML = '<span class="badge">ANZEIGE</span>';
+    if (!this.enabled()) {
+      container.classList.remove('live');
+      container.insertAdjacentHTML('beforeend', '<div class="aads-ph">Werbefläche · finanziert echte Sats</div>');
+      return false;
+    }
+    const id = String(AADS_UNIT_ID).trim();
+    const f = document.createElement('iframe');
+    f.setAttribute('data-aa', id);
+    f.src = 'https://ad.a-ads.com/' + id + '/?size=Adaptive';
+    f.setAttribute('loading', 'lazy');
+    f.setAttribute('scrolling', 'no');
+    f.title = 'Anzeige';
+    container.appendChild(f);
+    container.classList.add('live');
+    return true;
   },
-  /**
-   * Simulated rewarded video (5s placeholder).
-   * @returns {Promise<{ok:boolean, rewarded:boolean}>}
-   */
-  async showRewardedVideo(placementId) {
+  showBanners() {
+    document.querySelectorAll('[data-aads-slot]').forEach(el => this.mount(el));
+  },
+  /** Zeigt die A-Ads-Einheit einige Sekunden im Modal, dann Belohnung. */
+  async showRewardedVideo(placementId, seconds = 6) {
     return new Promise((resolve) => {
       const modal = document.getElementById('adModal');
       const fill = document.getElementById('adProgress');
       const cd = document.getElementById('adCountdown');
       const txt = document.getElementById('adModalText');
-      txt.textContent = `Platzierung: ${placementId}\n(Simuliert – kein Netzwerk)`;
+      const live = this.mount(document.getElementById('adModalSlot'));
+      txt.textContent = live ? 'Danke! Deine Belohnung kommt gleich.' : 'Platzhalter (keine A-Ads-ID gesetzt)';
       modal.classList.add('show');
       fill.style.width = '0%';
-      let left = 5;
-      cd.textContent = `${left} Sekunden`;
       const t0 = Date.now();
       const iv = setInterval(() => {
-        const elapsed = (Date.now() - t0) / 1000;
-        const pct = Math.min(100, (elapsed / 5) * 100);
-        fill.style.width = pct + '%';
-        left = Math.max(0, Math.ceil(5 - elapsed));
-        cd.textContent = left > 0 ? `${left} Sekunden` : 'Fertig!';
-        if (elapsed >= 5) {
+        const el = (Date.now() - t0) / 1000;
+        fill.style.width = Math.min(100, el / seconds * 100) + '%';
+        const left = Math.max(0, Math.ceil(seconds - el));
+        cd.textContent = left > 0 ? left + ' Sekunden' : 'Fertig!';
+        if (el >= seconds) {
           clearInterval(iv);
           modal.classList.remove('show');
-          resolve({ ok: true, rewarded: true });
+          document.getElementById('adModalSlot').innerHTML = '';
+          resolve({ ok: true, rewarded: true, live });
         }
       }, 100);
     });
@@ -506,8 +533,9 @@ const MIN_PAYOUT_SATS = 100;
 const HALVING_INTERVAL = 210; // toy: every 210 blocks (real BTC: 210000)
 const BASE_REWARD = 50;       // sats per block at epoch 0
 const TICK_MS = 100;
-const REAL_SATS_PER_REWARD_AD = 2; // conservative ad-funded sats
-const REAL_SATS_PASSIVE_PER_MIN = 0.05; // tiny drip while playing
+const REAL_SATS_PER_REWARD_AD = 0.5; // konservativ: A-Ads zahlt pro Impression nur Bruchteile
+const REAL_SATS_PASSIVE_PER_MIN = 0;  // kein passiver Echt-Sats-Zufluss
+const REAL_SATS_DAILY_CAP = 10;     // max. echte Sats pro Tag aus Werbung
 
 const UPGRADES = [
   { id: 'cpu',     icon: '🖥️', name: 'CPU-Kern',        desc: 'Extra Klick-Power',           baseCost: 15,    costMult: 1.15, power: 1,     type: 'click' },
@@ -542,7 +570,7 @@ const RANDOM_EVENTS = [
   { id: 'heat',   weight: 12, title: '🔥 Überhitzung',    text: 'Hashrate 30s um 40% reduziert', apply: s => { s.tempDebuffUntil = Date.now() + 30000; return 40; } },
   { id: 'cool',   weight: 15, title: '❄️ Perfekte Kühlung', text: 'Hashrate 45s um 50% erhöht!', apply: s => { s.tempBoostUntil = Date.now() + 45000; return 50; } },
   { id: 'fork',   weight: 8,  title: '🔀 Soft-Fork',      text: 'Schwierigkeit leicht gesenkt', apply: s => { s.diffBonus = Math.max(0, (s.diffBonus||0) - 0.15); return 1; } },
-  { id: 'sponsor',weight: 10, title: '📣 Sponsor',        text: '+{n} echte Ad-Sats!', apply: s => { const n = 1; s.realSats += n; return n; } },
+  { id: 'sponsor',weight: 10, title: '📣 Sponsor',        text: '+{n} Spiel-Sats vom Sponsor!', apply: s => { const n = 10; s.sats += n; return n; } },
 ];
 
 /* ---------- State ---------- */
@@ -557,6 +585,8 @@ function defaultState() {
     unlocked: {},
     halvings: 0,
     adsWatched: 0,
+    realDay: '',
+    realToday: 0,
     adBoostUntil: 0,
     tempBoostUntil: 0,
     tempDebuffUntil: 0,
@@ -807,9 +837,13 @@ async function watchRewardedAd() {
     if (res.ok && res.rewarded) {
       state.adsWatched++;
       state.adBoostUntil = Date.now() + 60000; // 60s 2x hashrate
-      state.realSats += REAL_SATS_PER_REWARD_AD;
+      const today = new Date().toISOString().slice(0, 10);
+      if (state.realDay !== today) { state.realDay = today; state.realToday = 0; }
+      const real = Math.max(0, Math.min(REAL_SATS_PER_REWARD_AD, REAL_SATS_DAILY_CAP - state.realToday));
+      state.realSats += real; state.realToday += real;
       state.sats += 15; // small game bonus
-      showToast(`📺 +${REAL_SATS_PER_REWARD_AD} echte Sats · 60s 2× Hashrate · +15 Spiel-Sats`);
+      showToast(real > 0 ? `📺 +${real} echte Sats · 60s 2× Hashrate · +15 Spiel-Sats`
+                         : '📺 Tageslimit echter Sats erreicht · 60s 2× Hashrate · +15 Spiel-Sats');
       logEvent(`📺 Rewarded Ad angesehen · +${REAL_SATS_PER_REWARD_AD} echte Sats`);
       checkAchievements();
       render();
@@ -1082,7 +1116,11 @@ function boot() {
   setupMineButton();
   setupTabs();
   setupUI();
-  AdProvider.showBanner('banner-top');
+  AdProvider.showBanners();
+  document.getElementById('bottomAdClose').addEventListener('click', () => {
+    document.getElementById('bottomAd').style.display = 'none';
+    document.querySelector('.app').style.paddingBottom = '24px';
+  });
   render();
   logEvent('Willkommen bei Satoshi Miner! Tippe MINE zum Start.');
   setInterval(tick, TICK_MS);
